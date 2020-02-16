@@ -31,6 +31,22 @@ namespace CurrencyConverter
         {
             DataContext = currencyConverterViewModel;
             this.InitializeComponent();
+            Windows.UI.ViewManagement.ApplicationView appView = Windows.UI.ViewManagement.ApplicationView.GetForCurrentView();
+            appView.SetPreferredMinSize(new Size(650, 700));
+            this.SizeChanged += MainPage_SizeChanged;
+            checkNowDate();
+        }
+
+        private void checkNowDate()
+        {
+            if (DateTimeOffset.Now.Day != currencyConverterViewModel.LastUpdateTime.Day)
+            {
+                UpdateCourseHyperLinkButton.Content = "Обновить курсы";
+            }
+            else
+            {
+                UpdateCourseHyperLinkButton.Content = "Актуальные курсы";
+            }
         }
 
         private void ReverseValuteButton_Click(object sender, RoutedEventArgs e)
@@ -47,7 +63,7 @@ namespace CurrencyConverter
             }
             if (sender.Text.Length > 0)
             {
-                ConvertedSumString = sender.Text.Replace(',', '.'); 
+                ConvertedSumString = sender.Text.Replace(',', '.');
             }
         }
 
@@ -60,6 +76,7 @@ namespace CurrencyConverter
                 if (regex.IsMatch(buf))
                 {
                     sender.Text = buf;
+                    ConvertedSumString = buf;
                     lastChangeTextBox = 1;
                 }
                 else
@@ -70,6 +87,7 @@ namespace CurrencyConverter
         private void HyperlinkButton_Click(object sender, RoutedEventArgs e)
         {
             currencyConverterViewModel.UpdateCourses();
+            checkNowDate();
         }
 
         private void CalculateSumTextBox_BeforeTextChanging(TextBox sender, TextBoxBeforeTextChangingEventArgs args)
@@ -94,11 +112,84 @@ namespace CurrencyConverter
                 if (regex.IsMatch(buf))
                 {
                     sender.Text = buf;
+                    CalculateSumString = buf;
                     lastChangeTextBox = 2;
                 }
                 else
                     sender.Text = CalculateSumString;
             }
+        }
+
+        private void MainPage_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            double MainWidth = this.ActualWidth;
+            double MainHeight = this.ActualHeight;
+
+            MainPageGrid.Width = MainWidth;
+            MainPageGrid.Height = MainHeight;
+
+            MainPageGridFirst.Width = new GridLength(MainWidth * 0.36);
+            MainPageGridSecond.Width = new GridLength(MainWidth * 0.64);
+
+            ValuteStackPanel.Width = MainWidth * 0.36;
+            ValuteStackPanel.Height = MainHeight;
+
+            CoursesStackPanel.Width = MainWidth * 0.64;
+            CoursesStackPanel.Height = MainHeight;
+
+            double widthFactor = 0.75;
+            double heightInfoFactor = 0.046;
+            double heightTextBoxFactor = 0.075;
+
+            ConvertibleSumInfo.Width = ValuteStackPanel.ActualWidth * widthFactor;
+            ConvertibleSumInfo.Height = ValuteStackPanel.ActualHeight * heightInfoFactor;
+
+            ConvertibleSumTextBox.Width = ValuteStackPanel.ActualWidth * widthFactor;
+            ConvertibleSumTextBox.Height = ValuteStackPanel.ActualHeight * heightTextBoxFactor;
+
+            ReverseValuteButton.Width = ValuteStackPanel.ActualWidth * 0.2;
+            ReverseValuteButton.Height = ValuteStackPanel.ActualHeight * 0.2;
+            ReverseValuteButton.Margin = new Thickness(0, ValuteStackPanel.ActualHeight * 0.065, 0, 0);
+
+            ReverseValuteButtonImage.Width = ValuteStackPanel.ActualWidth * 0.2;
+            ReverseValuteButtonImage.Height = ValuteStackPanel.ActualHeight * 0.2;
+
+            CalculateSumInfo.Width = ValuteStackPanel.ActualWidth * widthFactor;
+            CalculateSumInfo.Height = ValuteStackPanel.ActualHeight * heightInfoFactor;
+
+            CalculateSumTextBox.Width = ValuteStackPanel.ActualWidth * widthFactor;
+            CalculateSumTextBox.Height = ValuteStackPanel.ActualHeight * heightTextBoxFactor;
+
+            CurrentCourseAndDateInfo.Width = ValuteStackPanel.ActualWidth;
+            CurrentCourseAndDateInfo.Height = ValuteStackPanel.ActualHeight * 0.1;
+
+            UpdateCourseHyperLinkButton.Width = ValuteStackPanel.ActualWidth;
+            UpdateCourseHyperLinkButton.Height = ValuteStackPanel.ActualHeight * 0.1;
+            UpdateCourseHyperLinkButton.FontSize = UpdateCourseHyperLinkButton.Height * 0.3;
+
+            CoursesValuteTextBlock.Width = CoursesStackPanel.ActualWidth;
+            CoursesValuteTextBlock.Height = CoursesStackPanel.ActualHeight * heightInfoFactor;
+
+            CoursesValuteListBox.Width = CoursesStackPanel.ActualWidth * 0.95;
+            CoursesValuteListBox.Height = (CoursesStackPanel.ActualHeight - CoursesValuteTextBlock.ActualHeight) * 0.9;
+
+            TextBoxFontSizeChanged(ConvertibleSumTextBox);
+            TextBoxFontSizeChanged(CalculateSumTextBox);
+            TextBlockFontSizeChanged(ConvertibleSumInfo);
+            TextBlockFontSizeChanged(CalculateSumInfo);
+            TextBlockFontSizeChanged(CurrentCourseAndDateInfo);
+            TextBlockFontSizeChanged(CoursesValuteTextBlock);
+        }
+
+        private void TextBoxFontSizeChanged(TextBox textBox)
+        {
+            textBox.FontSize = textBox.Height * 0.4;
+        }
+
+        private void TextBlockFontSizeChanged(TextBlock textBlock)
+        {
+            if (textBlock.Height * 0.45 < 22.1)
+                textBlock.FontSize = textBlock.Height * 0.45;
         }
     }
 }

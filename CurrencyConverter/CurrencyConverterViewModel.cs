@@ -75,6 +75,8 @@ namespace CurrencyConverter
             }
             catch(Exception e)
             {
+                IntSum = 0;
+                DivSum = 0;
                 Console.WriteLine(e.Message);
             }
         }

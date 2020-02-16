@@ -1,4 +1,5 @@
-﻿<Page
+﻿<Page 
+    x:Name="MainPageWindow"
     x:Class="CurrencyConverter.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -6,23 +7,33 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" MinHeight="650" MinWidth="666">
 
-    <Grid Margin="0,0,0,10">
-        <TextBox BeforeTextChanging="TextBox_BeforeTextChanging" TextChanging="TextBox_TextChanging" HorizontalAlignment="Left" Height="68" Margin="112,137,0,0" Text="{Binding Path=CurrentConvertibleSumString,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" TextWrapping="NoWrap" VerticalAlignment="Top" Width="333" InputScope="Number" PlaceholderText="Введите сумму" TextAlignment="Left" FontStretch="SemiExpanded" FontSize="18"/>
-        <TextBox x:Name="CalculateSumTextBox" BeforeTextChanging="CalculateSumTextBox_BeforeTextChanging" TextChanging="CalculateSumTextBox_TextChanging" HorizontalAlignment="Left" Height="68" Margin="112,570,0,0" Text="{Binding Path=CurrentCalculateSumString,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" TextWrapping="NoWrap" VerticalAlignment="Top" Width="333" InputScope="Number" PlaceholderText="Введите сумму"/>
-        <ListBox Margin="552,137,178,80" ItemsSource="{Binding Path=ValuteModelsList}" SelectedIndex="{Binding Path=SelectedIndex,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" />
-        <Button x:Name="ReverseValuteButton"  Height="198" 
-                Margin="148,297,0,0" VerticalAlignment="Top" Width="225" Click="ReverseValuteButton_Click" HorizontalContentAlignment="Stretch" RenderTransformOrigin="0.5,0.5"
+    <Grid x:Name="MainPageGrid" Margin="0,0,0,10" MinHeight="650" MinWidth="666" >
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="MainPageGridFirst" Width="*" MaxWidth="553"/>
+            <ColumnDefinition x:Name="MainPageGridSecond" Width="*"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel x:Name="ValuteStackPanel" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.Column="0" Margin="25,0,0,0" MinWidth="180" MinHeight="300" >
+            <TextBlock x:Name="ConvertibleSumInfo" HorizontalAlignment="Center" Margin="0,64,0,0" Text="{Binding Path=ConvertibleValuteInfo,UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" FontSize="18" MinWidth="120" MaxWidth="333" MaxHeight="32" MinHeight="16"/>
+            <TextBox x:Name="ConvertibleSumTextBox" BeforeTextChanging="TextBox_BeforeTextChanging" TextChanging="TextBox_TextChanging" HorizontalAlignment="Center" Margin="0,20,0,0" Text="{Binding Path=CurrentConvertibleSumString,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" TextWrapping="NoWrap" VerticalAlignment="Top" InputScope="Number" PlaceholderText="Введите сумму" TextAlignment="Left" FontStretch="SemiExpanded" FontSize="24" MinWidth="120" MinHeight="16" MaxWidth="333" MaxHeight="68"/>
+            <Button x:Name="ReverseValuteButton" HorizontalAlignment="Center"
+                Margin="0,65,0,0" Click="ReverseValuteButton_Click" 
+                    MaxWidth="200" MaxHeight="200" MinWidth="50" MinHeight="50"
                 Padding="0" BorderThickness="0">
+                <Image x:Name="ReverseValuteButtonImage" Source="Assets/TwoArrows2.png" HorizontalAlignment="Center" FocusVisualPrimaryBrush="White" FocusVisualSecondaryBrush="#FFD93F3F" 
+                       MaxWidth="200" MaxHeight="200" MinWidth="50" MinHeight="50"/>
+            </Button>
+            <TextBlock x:Name="CalculateSumInfo" HorizontalAlignment="Center" Margin="0,30,0,0" Text="{Binding Path=CalculateValuteInfo,UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="18" MaxWidth="333" MinWidth="120" MinHeight="16" MaxHeight="32"/>
+            <TextBox x:Name="CalculateSumTextBox" BeforeTextChanging="CalculateSumTextBox_BeforeTextChanging" TextChanging="CalculateSumTextBox_TextChanging" HorizontalAlignment="Center" Margin="0,20,0,0" Text="{Binding Path=CurrentCalculateSumString,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" TextWrapping="NoWrap" VerticalAlignment="Top" InputScope="Number" PlaceholderText="Введите сумму" MaxWidth="333" MinWidth="120" MaxHeight="68" MinHeight="16" FontSize="18"/>
+            <TextBlock x:Name="CurrentCourseAndDateInfo" HorizontalAlignment="Center" Margin="0,20,0,0" Text="{Binding Path=CurrentCourseValute, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="18" MaxHeight="68" MaxWidth="333" MinWidth="120" MinHeight="30"/>
+            <HyperlinkButton x:Name="UpdateCourseHyperLinkButton" Content="Обновить курсы" Click="HyperlinkButton_Click" Margin="0,20,0,0" HorizontalAlignment="Center" MaxHeight="68" MaxWidth="333" MinWidth="120" MinHeight="30"/>
 
-            <Image Source="Assets/TwoArrows2.png" Stretch="UniformToFill" Margin="0,-19,0,0" FocusVisualPrimaryBrush="Black" FocusVisualSecondaryBrush="#FFD93F3F"/>
-        </Button>
-        <TextBlock x:Name="ConvertibleSumInfo" HorizontalAlignment="Left" Height="22" Margin="112,94,0,0" Text="{Binding Path=ConvertibleValuteInfo,UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Top" Width="298" FontSize="18"/>
-        <TextBlock x:Name="CalculateSumInfo" HorizontalAlignment="Left" Height="22" Margin="112,533,0,0" Text="{Binding Path=CalculateValuteInfo,UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Top" Width="298" FontSize="18"/>
-        <TextBlock HorizontalAlignment="Left" Height="46" Margin="112,678,0,0" Text="{Binding Path=CurrentCourseValute, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Top" Width="358" FontSize="18"/>
-        <TextBlock HorizontalAlignment="Left" Height="36" Margin="552,85,0,0" Text="Курсы валют" TextWrapping="Wrap" VerticalAlignment="Top" Width="765" TextAlignment="Center" FontSize="18"/>
-        <HyperlinkButton Content="Обновить курсы" Click="HyperlinkButton_Click" Height="41" Margin="112,732,0,0" VerticalAlignment="Top" Width="333" FontSize="18"/>
+        </StackPanel>
+        <StackPanel x:Name="CoursesStackPanel" Margin="9,0,30,10" MinWidth="120" MinHeight="300" Grid.Column="1">
+            <TextBlock x:Name="CoursesValuteTextBlock" HorizontalAlignment="Center" Margin="0,30,0,0" Text="Курсы валют" TextWrapping="Wrap" TextAlignment="Center" FontSize="18" MinWidth="120" MinHeight="16" MaxHeight="32"/>
+            <ListBox x:Name="CoursesValuteListBox" HorizontalAlignment="Center" Margin="0,20,0,20"  ItemsSource="{Binding Path=ValuteModelsList}" SelectedIndex="{Binding Path=SelectedIndex,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" MinWidth="120" MinHeight="200" MaxHeight="600" MaxWidth="900" />
+        </StackPanel>
 
     </Grid>
 </Page>
