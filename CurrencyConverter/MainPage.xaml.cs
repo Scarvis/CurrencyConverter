@@ -24,6 +24,9 @@ namespace CurrencyConverter
     public sealed partial class MainPage : Page
     {
         CurrencyConverterViewModel currencyConverterViewModel = new CurrencyConverterViewModel();
+        string ConvertedSumString;
+        string CalculateSumString;
+        int lastChangeTextBox = 3;
         public MainPage()
         {
             DataContext = currencyConverterViewModel;
@@ -37,24 +40,65 @@ namespace CurrencyConverter
 
         private void TextBox_BeforeTextChanging(TextBox sender, TextBoxBeforeTextChangingEventArgs args)
         {
-            //args.Cancel = args.NewText.Any(c => !char.IsDigit(c));
-            //Regex regex = new Regex("[^0-9.-]+");
-            //Regex regex = new Regex("[^0-9.-]+");
-            //args.Cancel = regex.IsMatch(sender.Text);
+            if (lastChangeTextBox == 2)
+            {
+                lastChangeTextBox = 3;
+                return;
+            }
+            if (sender.Text.Length > 0)
+            {
+                ConvertedSumString = sender.Text.Replace(',', '.'); 
+            }
         }
 
         private void TextBox_TextChanging(TextBox sender, TextBoxTextChangingEventArgs args)
         {
-            //sender.Text = new String(sender.Text.Where(char.IsDigit).ToArray());
-        }
-
-        private void TextBox_KeyDown(object sender, KeyRoutedEventArgs e)
-        {
+            if (sender.Text.Length > 0)
+            {
+                string buf = sender.Text.Replace(',', '.');
+                Regex regex = new Regex(@"^([1-9]){1}(\d){0,11}$|^((([1-9]){1}(\d){0,11})|((0){0,1}))(\.?)(\d){0,4}$");
+                if (regex.IsMatch(buf))
+                {
+                    sender.Text = buf;
+                    lastChangeTextBox = 1;
+                }
+                else
+                    sender.Text = ConvertedSumString;
+            }
         }
 
         private void HyperlinkButton_Click(object sender, RoutedEventArgs e)
         {
             currencyConverterViewModel.UpdateCourses();
+        }
+
+        private void CalculateSumTextBox_BeforeTextChanging(TextBox sender, TextBoxBeforeTextChangingEventArgs args)
+        {
+            if (lastChangeTextBox == 1)
+            {
+                lastChangeTextBox = 3;
+                return;
+            }
+            if (sender.Text.Length > 0)
+            {
+                CalculateSumString = sender.Text.Replace(',', '.');
+            }
+        }
+
+        private void CalculateSumTextBox_TextChanging(TextBox sender, TextBoxTextChangingEventArgs args)
+        {
+            if (sender.Text.Length > 0)
+            {
+                string buf = sender.Text.Replace(',', '.');
+                Regex regex = new Regex(@"^([1-9]){1}(\d){0,11}$|^((([1-9]){1}(\d){0,11})|((0){0,1}))(\.?)(\d){0,4}$");
+                if (regex.IsMatch(buf))
+                {
+                    sender.Text = buf;
+                    lastChangeTextBox = 2;
+                }
+                else
+                    sender.Text = CalculateSumString;
+            }
         }
     }
 }
