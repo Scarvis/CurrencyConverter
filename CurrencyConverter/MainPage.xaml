@@ -1,0 +1,28 @@
+﻿<Page
+    x:Class="CurrencyConverter.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:CurrencyConverter"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid Margin="0,0,0,10">
+        <TextBox  KeyDown="TextBox_KeyDown" BeforeTextChanging="TextBox_BeforeTextChanging" TextChanging="TextBox_TextChanging" HorizontalAlignment="Left" Height="68" Margin="112,137,0,0" Text="{Binding Path=CurrentConvertibleSumString,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" TextWrapping="NoWrap" VerticalAlignment="Top" Width="333" InputScope="Number" PlaceholderText="Введите сумму" TextAlignment="Left" FontStretch="SemiExpanded" FontSize="18"/>
+        <TextBox HorizontalAlignment="Left" Height="68" Margin="112,570,0,0" Text="{Binding Path=CurrentCalculateSumString,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" TextWrapping="NoWrap" VerticalAlignment="Top" Width="333" InputScope="Number" PlaceholderText="Введите сумму"/>
+        <ListBox Margin="552,137,178,80" ItemsSource="{Binding Path=ValuteModelsList}" SelectedIndex="{Binding Path=SelectedIndex,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" />
+        <Button x:Name="ReverseValuteButton"  Height="198" 
+                Margin="148,297,0,0" VerticalAlignment="Top" Width="225" Click="ReverseValuteButton_Click" HorizontalContentAlignment="Stretch" RenderTransformOrigin="0.5,0.5"
+                Padding="0" BorderThickness="0">
+
+            <Image Source="Assets/TwoArrowsDark.png" Stretch="UniformToFill" Margin="0,-19,0,0" FocusVisualPrimaryBrush="Black" FocusVisualSecondaryBrush="#FFD93F3F"/>
+        </Button>
+        <TextBlock x:Name="ConvertibleSumInfo" HorizontalAlignment="Left" Height="22" Margin="112,94,0,0" Text="{Binding Path=ConvertibleValuteInfo,UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Top" Width="298" FontSize="18"/>
+        <TextBlock x:Name="CalculateSumInfo" HorizontalAlignment="Left" Height="22" Margin="112,533,0,0" Text="{Binding Path=CalculateValuteInfo,UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Top" Width="298" FontSize="18"/>
+        <TextBlock HorizontalAlignment="Left" Height="46" Margin="112,678,0,0" Text="{Binding Path=CurrentCourseValute, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Top" Width="358" FontSize="18"/>
+        <TextBlock HorizontalAlignment="Left" Height="36" Margin="552,85,0,0" Text="Курсы валют" TextWrapping="Wrap" VerticalAlignment="Top" Width="765" TextAlignment="Center" FontSize="18"/>
+        <HyperlinkButton Content="Обновить" Click="HyperlinkButton_Click" Height="41" Margin="112,732,0,0" VerticalAlignment="Top" Width="333" FontSize="18"/>
+
+    </Grid>
+</Page>
