@@ -7,7 +7,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" MinHeight="650" MinWidth="666">
+    Background="Black"
+    MinHeight="650" MinWidth="666">
 
     <Grid x:Name="MainPageGrid" Margin="0,0,0,10" MinHeight="650" MinWidth="666" >
         <Grid.ColumnDefinitions>
@@ -21,8 +22,8 @@
                 Margin="0,65,0,0" Click="ReverseValuteButton_Click" 
                     MaxWidth="200" MaxHeight="200" MinWidth="50" MinHeight="50"
                 Padding="0" BorderThickness="0">
-                <Image x:Name="ReverseValuteButtonImage" Source="Assets/TwoArrows2.png" HorizontalAlignment="Center" FocusVisualPrimaryBrush="White" FocusVisualSecondaryBrush="#FFD93F3F" 
-                       MaxWidth="200" MaxHeight="200" MinWidth="50" MinHeight="50"/>
+                <Image x:Name="ReverseValuteButtonImage" Source="Assets/TwoArrowsLight.png" HorizontalAlignment="Center" FocusVisualPrimaryBrush="White" FocusVisualSecondaryBrush="#FFD93F3F" 
+                       Stretch="Fill"  MaxWidth="200" MaxHeight="200" MinWidth="50" MinHeight="50"/>
             </Button>
             <TextBlock x:Name="CalculateSumInfo" HorizontalAlignment="Center" Margin="0,30,0,0" Text="{Binding Path=CalculateValuteInfo,UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="18" MaxWidth="333" MinWidth="120" MinHeight="16" MaxHeight="32"/>
             <TextBox x:Name="CalculateSumTextBox" BeforeTextChanging="CalculateSumTextBox_BeforeTextChanging" TextChanging="CalculateSumTextBox_TextChanging" HorizontalAlignment="Center" Margin="0,20,0,0" Text="{Binding Path=CurrentCalculateSumString,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" TextWrapping="NoWrap" VerticalAlignment="Top" InputScope="Number" PlaceholderText="Введите сумму" MaxWidth="333" MinWidth="120" MaxHeight="68" MinHeight="16" FontSize="18"/>

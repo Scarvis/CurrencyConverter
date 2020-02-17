@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -178,20 +177,7 @@ namespace CurrencyConverter
         {
             var t = Task.Run(() => GetJsonString());
             t.Wait();
-            //string outputString = t.Result;
             JsonData = JsonConvert.DeserializeObject<JsonModel>(t.Result);
-            //try
-            //{
-            //    using (StreamWriter sw = File.CreateText(JsonPath))
-            //    {
-            //        JsonSerializer serializer = new JsonSerializer();
-            //        serializer.Serialize(sw, outputString);
-            //    }
-            //}
-            //catch(Exception e)
-            //{
-            //    Console.WriteLine(e.Message);
-            //}
         }
 
         private void NotifyPropertyChanged(string propertyName = "")
@@ -243,8 +229,8 @@ namespace CurrencyConverter
             intSum += (long)(Math.Truncate(alpha));
             divSum += doubleToShort(Math.Round(alpha - Math.Truncate(alpha), 4));
 
-            valuteSum.IntSum = intSum;
-            valuteSum.DivSum = divSum;
+            valuteSum.IntSum = intSum + (divSum / 10000);
+            valuteSum.DivSum = (short)(divSum % 10000);
             return valuteSum;
         }
 
@@ -260,14 +246,16 @@ namespace CurrencyConverter
         
         private short doubleToShort(double d)
         {
-            short result = 0;
             string buf = d.ToString();
-            for (int i = buf.Length - 1,  n = 1; i >= 0; i--, n*=10)
+            if (!buf.Contains(',')) return 0;
+            short result = 0;
+            short k = 10000;
+            for (int i = buf.Length - 1, n = 1; i >= 0; i--, k /= 10, n *= 10)
             {
-                if (buf[i].Equals(',') || buf[i].Equals('0')) break;
+                if (buf[i].Equals(',')) break;
                 result += (short)(int.Parse(buf[i].ToString()) * n);
             }
-            return result;
+            return (short)(result * k);
         }
 
         public void UpdateCourses()
@@ -276,7 +264,7 @@ namespace CurrencyConverter
             if (curDate.Day != LastUpdateTime.Day)
             {
                 UpdateCurrency();
-                LastUpdateTime = curDate;
+                LastUpdateTime = JsonData.Date;
                 SetCalculateValute();
                 NotifyPropertyChanged("SelectedIndex");
                 NotifyPropertyChanged("CurrentConvertibleSumString");
