@@ -27,7 +27,7 @@
             </Button>
             <TextBlock x:Name="CalculateSumInfo" HorizontalAlignment="Center" Margin="0,30,0,0" Text="{Binding Path=CalculateValuteInfo,UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="18" MaxWidth="333" MinWidth="120" MinHeight="16" MaxHeight="32"/>
             <TextBox x:Name="CalculateSumTextBox" BeforeTextChanging="CalculateSumTextBox_BeforeTextChanging" TextChanging="CalculateSumTextBox_TextChanging" HorizontalAlignment="Center" Margin="0,20,0,0" Text="{Binding Path=CurrentCalculateSumString,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" TextWrapping="NoWrap" VerticalAlignment="Top" InputScope="Number" PlaceholderText="Введите сумму" MaxWidth="333" MinWidth="120" MaxHeight="68" MinHeight="16" FontSize="18"/>
-            <TextBlock x:Name="CurrentCourseAndDateInfo" HorizontalAlignment="Center" Margin="0,20,0,0" Text="{Binding Path=CurrentCourseValute, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="18" MaxHeight="68" MaxWidth="333" MinWidth="120" MinHeight="30"/>
+            <TextBlock x:Name="CurrentCourseAndDateInfo" HorizontalAlignment="Center" Margin="0,20,0,0" Text="{Binding Path=CurrentCourseValuteShort, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="18" MaxHeight="68" MaxWidth="333" MinWidth="120" MinHeight="30"/>
             <HyperlinkButton x:Name="UpdateCourseHyperLinkButton" Content="Обновить курсы" Click="HyperlinkButton_Click" Margin="0,20,0,0" HorizontalAlignment="Center" MaxHeight="68" MaxWidth="333" MinWidth="120" MinHeight="30"/>
 
         </StackPanel>

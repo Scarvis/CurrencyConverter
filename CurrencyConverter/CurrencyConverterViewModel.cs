@@ -15,6 +15,8 @@ namespace CurrencyConverter
     {
         public long IntSum { get; set; }
         public short DivSum { get; set; }
+        public string ValuteCharCode { get; set; }
+        public string ValuteInfo { get; set; }
         public string SumStr
         {
             get
@@ -26,11 +28,15 @@ namespace CurrencyConverter
         {
             IntSum = intSum;
             DivSum = divSum;
+            ValuteCharCode = string.Empty;
+            ValuteInfo = string.Empty;
         }
         public ValuteSum(ValuteSum valuteSum)
         {
             IntSum = valuteSum.IntSum;
             DivSum = valuteSum.DivSum;
+            ValuteCharCode = valuteSum.ValuteCharCode;
+            ValuteInfo = valuteSum.ValuteInfo;
         }
         public double divSumToDouble()
         {
@@ -81,33 +87,37 @@ namespace CurrencyConverter
         }
     }
 
-    class CurrencyConverterViewModel : INotifyPropertyChanged
+    class CurrencyConverterCore
     {
         static readonly HttpClient client = new HttpClient();
         private const string Url = "https://www.cbr-xml-daily.ru/daily_json.js";
         private const string RubString = "Российский рубль RUB";
+        private const string RubCharCode = "RUB";
         private readonly string JsonPath = string.Format("{0}\\{1}", Directory.GetCurrentDirectory(), "daily_json.json");
-        private JsonModel JsonData = new JsonModel();
+        private JsonModel JsonData;
         private double CurrentFactor;
         private double CurrentReverseFactor;
 
-        public string _ConvertibleValuteInfo = "Российский рубль RUB";
-        public string _CalculateValuteInfo = "Доллар США USD";
         public List<ValuteModel> _ValuteModelsList;
         public int _SelectedIndex = 0;
         public ValuteSum CurrentConvertibleSum;
         public ValuteSum CurrentCalculateSum;
         public DateTimeOffset LastUpdateTime { private set; get; }
-        public event PropertyChangedEventHandler PropertyChanged;
 
-        public CurrencyConverterViewModel()
+        public CurrencyConverterCore()
         {
             client.BaseAddress = new Uri(Url);
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            InitData();
+            Init();
+        }
+
+        private void InitData()
+        {
             if (!getJsonFromLocal())
                 UpdateCurrency();
-            Init();
         }
 
         private void Init()
@@ -119,13 +129,43 @@ namespace CurrencyConverter
                 _SelectedIndex = JsonData.Valute.Keys.ToList().IndexOf("USD");
                 _ValuteModelsList = JsonData.Valute.Values.ToList();
                 LastUpdateTime = JsonData.Date;
+                CurrentConvertibleSum.ValuteInfo = RubString;
+                CurrentConvertibleSum.ValuteCharCode = RubCharCode;
+                CurrentCalculateSum.ValuteInfo = JsonData.Valute["USD"].ToString();
+                CurrentCalculateSum.ValuteCharCode = "USD";
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 CurrentReverseFactor = 0;
                 CurrentFactor = 0;
                 _SelectedIndex = 0;
                 _ValuteModelsList = new List<ValuteModel>();
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        private void ChangeConvertedValuteInfo(string key)
+        {
+            try
+            {
+                CurrentConvertibleSum.ValuteInfo = JsonData.Valute[key].ToString();
+                CurrentConvertibleSum.ValuteCharCode = JsonData.Valute[key].CharCode;
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        private void ChangeCalculatedValuteInfo(string key)
+        {
+            try
+            {
+                CurrentCalculateSum.ValuteInfo = JsonData.Valute[key].ToString();
+                CurrentCalculateSum.ValuteCharCode = JsonData.Valute[key].CharCode;
+            }
+            catch (Exception e)
+            {
                 Console.WriteLine(e.Message);
             }
         }
@@ -155,7 +195,7 @@ namespace CurrencyConverter
             return true;
         }
 
-        static async Task<string> GetJsonString()
+        private async Task<string> GetJsonString()
         {
             string strData = string.Empty;
             HttpResponseMessage response = await client.GetAsync(Url);
@@ -165,7 +205,7 @@ namespace CurrencyConverter
                 {
                     strData = await response.Content.ReadAsStringAsync();
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
                 }
@@ -180,34 +220,33 @@ namespace CurrencyConverter
             JsonData = JsonConvert.DeserializeObject<JsonModel>(t.Result);
         }
 
-        private void NotifyPropertyChanged(string propertyName = "")
+        private void SetFactor(double factor, double reverseFactor)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            CurrentFactor = factor;
+            CurrentReverseFactor = reverseFactor;
         }
 
-        private void SetCalculateValute()
+        private long LongMultiplication(double factor, long lValue, double dValue, out double remainder)
         {
-            string key = JsonData.Valute.Keys.ToList()[SelectedIndex];
-            double value = JsonData.Valute[key].Value / JsonData.Valute[key].Nominal;
-            if (value.Equals(0.0)) value = 1.0;
-            if (_CalculateValuteInfo.Equals(RubString))
-            {
-                _ConvertibleValuteInfo = JsonData.Valute[key].ToString();
-                CurrentFactor = value;
-                CurrentReverseFactor = 1 / value;
-                Calculate();
-                NotifyPropertyChanged("ConvertibleValuteInfo");
-                NotifyPropertyChanged("CurrentConvertibleSumString");
-            }
-            else if (_ConvertibleValuteInfo.Equals(RubString))
-            {
-                CurrentReverseFactor = value;
-                CurrentFactor = 1 / value;
-                _CalculateValuteInfo = JsonData.Valute[key].ToString();
-                ReverseCalculate();
-                NotifyPropertyChanged("CalculateValuteInfo");
-                NotifyPropertyChanged("CurrentCalculateSumString");
-            }
+            double dv = Math.Round(factor * dValue, 4);
+            long result = (long)(lValue * factor) + (long)Math.Truncate(dv);
+            remainder = Math.Round(dv - Math.Truncate(dv), 4);
+            return result;
+        }
+
+        private double FractMultiplication(double factor, long lValue, double dValue)
+        {
+            double result = Math.Round(factor * dValue + factor * lValue, 4);
+            return result;
+        }
+
+        private void FourStepMultiplication(double FactorDiv, double FactorInt, long calcInt, double calcDiv, out long lValue, out double dValue)
+        {
+            double remainder;
+            lValue = LongMultiplication(FactorInt, calcInt, calcDiv, out remainder);
+            dValue = FractMultiplication(FactorDiv, calcInt, calcDiv) + remainder;
+            lValue += (long)Math.Truncate(dValue);
+            dValue = Math.Round(dValue - Math.Truncate(dValue), 4);
         }
 
         private ValuteSum Calculate(double Factor, ValuteSum calcSum)
@@ -215,38 +254,18 @@ namespace CurrencyConverter
             ValuteSum valuteSum = new ValuteSum();
             double FactorDiv = Math.Round(Factor - Math.Truncate(Factor), 4);
             double FactorInt = Math.Truncate(Factor);
+            long calcInt;
+            double calcDiv;
+            FourStepMultiplication(FactorDiv, FactorInt, calcSum.IntSum, calcSum.divSumToDouble(), out calcInt, out calcDiv);
 
-            long intSum = (long)(calcSum.IntSum * FactorInt);
-            double alpha = Math.Round(FactorInt * calcSum.divSumToDouble(), 4);
-            intSum += (long)(Math.Truncate(alpha));
-            short divSum = doubleToShort(Math.Round(alpha - Math.Truncate(alpha), 4));
-
-            alpha = Math.Round(FactorDiv * calcSum.IntSum, 4);
-            intSum += (long)(Math.Truncate(alpha));
-            divSum += doubleToShort(Math.Round(alpha - Math.Truncate(alpha), 4));
-
-            alpha = Math.Round(FactorDiv * calcSum.divSumToDouble(), 4);
-            intSum += (long)(Math.Truncate(alpha));
-            divSum += doubleToShort(Math.Round(alpha - Math.Truncate(alpha), 4));
-
-            valuteSum.IntSum = intSum + (divSum / 10000);
-            valuteSum.DivSum = (short)(divSum % 10000);
+            valuteSum.IntSum = calcInt;
+            valuteSum.DivSum = doubleToShort(calcDiv);
             return valuteSum;
         }
 
-        private void ReverseCalculate()
-        {
-            CurrentConvertibleSum.setValue(Calculate(CurrentReverseFactor, CurrentCalculateSum));
-        }
-
-        private void Calculate()
-        {
-            CurrentCalculateSum.setValue(Calculate(CurrentFactor, CurrentConvertibleSum));
-        }
-        
         private short doubleToShort(double d)
         {
-            string buf = d.ToString();
+            string buf = Math.Round(d, 4).ToString();
             if (!buf.Contains(',')) return 0;
             short result = 0;
             short k = 10000;
@@ -258,6 +277,44 @@ namespace CurrencyConverter
             return (short)(result * k);
         }
 
+        public void SetIndexCalculateValute(int index)
+        {
+            try
+            {
+                string key = JsonData.Valute.Keys.ToList()[index];
+                double value = JsonData.Valute[key].Value / JsonData.Valute[key].Nominal;
+                if (value.Equals(0.0)) value = 1.0;
+
+                if (CurrentCalculateSum.ValuteInfo.Equals(RubString))
+                {
+                    ChangeConvertedValuteInfo(key);
+                    SetFactor(value, 1 / value);
+                    CalculateConvertibleValute();
+                }
+                else if (CurrentConvertibleSum.ValuteInfo.Equals(RubString))
+                {
+                    ChangeCalculatedValuteInfo(key);
+                    SetFactor(1 / value, value);
+                    CalculateCalculateValute();
+                }
+                _SelectedIndex = index;
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        public void CalculateConvertibleValute()
+        {
+            CurrentCalculateSum.setValue(Calculate(CurrentFactor, CurrentConvertibleSum));
+        }
+
+        public void CalculateCalculateValute()
+        {
+            CurrentConvertibleSum.setValue(Calculate(CurrentReverseFactor, CurrentCalculateSum));
+        }
+
         public void UpdateCourses()
         {
             DateTimeOffset curDate = DateTimeOffset.Now;
@@ -265,36 +322,22 @@ namespace CurrencyConverter
             {
                 UpdateCurrency();
                 LastUpdateTime = JsonData.Date;
-                SetCalculateValute();
-                NotifyPropertyChanged("SelectedIndex");
-                NotifyPropertyChanged("CurrentConvertibleSumString");
-                NotifyPropertyChanged("CurrentCalculateSumString");
-                NotifyPropertyChanged("CurrentCourseValute");
+                SetIndexCalculateValute(_SelectedIndex);
             }
         }
 
         public void ReverseValute()
         {
-            ValuteSum bufValute = new ValuteSum(CurrentConvertibleSum.IntSum, CurrentConvertibleSum.DivSum);
+            ValuteSum bufValute = new ValuteSum(CurrentConvertibleSum);
             CurrentConvertibleSum = CurrentCalculateSum;
             CurrentCalculateSum = bufValute;
-
-            string bufStr = _CalculateValuteInfo;
-            _CalculateValuteInfo = _ConvertibleValuteInfo;
-            _ConvertibleValuteInfo = bufStr;
 
             var bufFactor = CurrentFactor;
             CurrentFactor = CurrentReverseFactor;
             CurrentReverseFactor = bufFactor;
-
-            NotifyPropertyChanged("CurrentConvertibleSumString");
-            NotifyPropertyChanged("CurrentCalculateSumString");
-            NotifyPropertyChanged("ConvertibleValuteInfo");
-            NotifyPropertyChanged("CalculateValuteInfo");
-            NotifyPropertyChanged("CurrentCourseValute");
         }
 
-        public string CurrentConvertibleSumString
+        public string ConvertibleValuteSumString
         {
             get
             {
@@ -302,10 +345,135 @@ namespace CurrencyConverter
             }
             set
             {
-                if (value != this.CurrentConvertibleSum.SumStr)
+                CurrentConvertibleSum.SetValueFromStr(value);
+                CalculateConvertibleValute();
+            }
+        }
+
+        public string CalculateValuteSumString
+        {
+            get
+            {
+                return CurrentCalculateSum.SumStr;
+            }
+            set
+            {
+                CurrentCalculateSum.SetValueFromStr(value);
+                CalculateCalculateValute();
+            }
+        }
+
+        public string ConvertibleValuteInfo
+        {
+            get
+            {
+                return CurrentConvertibleSum.ValuteInfo;
+            }
+        }
+
+        public string CalculateValuteInfo
+        {
+            get
+            {
+                return CurrentCalculateSum.ValuteInfo;
+            }
+        }
+
+        public List<ValuteModel> ValuteModelsList
+        {
+            get
+            {
+                return _ValuteModelsList;
+            }
+        }
+
+        public string CurrentCourseValutesInfo
+        {
+            get
+            {
+                string key = JsonData.Valute.Keys.ToList()[_SelectedIndex];
+                string leftKey, rightKey;
+                if (ConvertibleValuteInfo.Contains("RUB"))
                 {
-                    CurrentConvertibleSum.SetValueFromStr(value);
-                    Calculate();
+                    leftKey = "RUB";
+                    rightKey = key;
+                }
+                else
+                {
+                    leftKey = key;
+                    rightKey = "RUB";
+                }
+                return string.Format("1 {0} = {1} {2}\nОбновлено {3}",
+                    leftKey, Math.Round(CurrentFactor, 4).ToString(), rightKey, LastUpdateTime.ToString());
+            }
+        }
+
+        public string CurrentCourseValutesInfoShort
+        {
+            get
+            {
+                string key = CurrentConvertibleSum.ValuteCharCode;
+                return string.Format("{0} {1}\n{2}",
+                    Math.Round(CurrentFactor, 4).ToString(), key, LastUpdateTime.Date.ToString("d"));
+            }
+        }
+    }
+
+    class CurrencyConverterViewModel : INotifyPropertyChanged
+    {
+        private CurrencyConverterCore currencyConverterCore;
+
+        public int _SelectedIndex = 0;
+        public DateTimeOffset LastUpdateTime { private set; get; }
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public CurrencyConverterViewModel()
+        {
+            currencyConverterCore = new CurrencyConverterCore();
+            LastUpdateTime = currencyConverterCore.LastUpdateTime;
+            _SelectedIndex = currencyConverterCore._SelectedIndex;
+        }
+
+        private void notifyAll()
+        {
+            NotifyPropertyChanged("SelectedIndex");
+            NotifyPropertyChanged("CurrentConvertibleSumString");
+            NotifyPropertyChanged("CurrentCalculateSumString");
+            NotifyPropertyChanged("ValuteModelsList");
+            NotifyPropertyChanged("ConvertibleValuteInfo");
+            NotifyPropertyChanged("CalculateValuteInfo");
+            NotifyPropertyChanged("CurrentCourseValute");
+            NotifyPropertyChanged("CurrentCourseValuteShort");
+        }
+
+        private void NotifyPropertyChanged(string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void ReverseValute()
+        {
+            currencyConverterCore.ReverseValute();
+            notifyAll();
+        }
+
+        public void UpdateCourses()
+        {
+            currencyConverterCore.UpdateCourses();
+            notifyAll();
+        }
+
+        public string CurrentConvertibleSumString
+        {
+            get
+            {
+                return currencyConverterCore.ConvertibleValuteSumString;
+            }
+            set
+            {
+                if (value != currencyConverterCore.ConvertibleValuteSumString)
+                {
+                    currencyConverterCore.ConvertibleValuteSumString = value;
                     NotifyPropertyChanged("CurrentConvertibleSumString");
                     NotifyPropertyChanged("CurrentCalculateSumString");
                 }
@@ -316,14 +484,13 @@ namespace CurrencyConverter
         {
             get
             {
-                return CurrentCalculateSum.SumStr; 
+                return currencyConverterCore.CalculateValuteSumString;
             }
             set
             {
-                if (value != this.CurrentCalculateSum.SumStr)
+                if (value != currencyConverterCore.CalculateValuteSumString)
                 {
-                    CurrentCalculateSum.SetValueFromStr(value);
-                    ReverseCalculate();
+                    currencyConverterCore.CalculateValuteSumString = value;
                     NotifyPropertyChanged("CurrentConvertibleSumString");
                     NotifyPropertyChanged("CurrentCalculateSumString");
                 }
@@ -341,11 +508,12 @@ namespace CurrencyConverter
                 if(value != _SelectedIndex)
                 {
                     _SelectedIndex = value;
-                    SetCalculateValute();
+                    currencyConverterCore.SetIndexCalculateValute(_SelectedIndex);
                     NotifyPropertyChanged("SelectedIndex");
                     NotifyPropertyChanged("CurrentConvertibleSumString");
                     NotifyPropertyChanged("CurrentCalculateSumString");
                     NotifyPropertyChanged("CurrentCourseValute");
+                    NotifyPropertyChanged("CurrentCourseValuteShort");
                 }
             }
         }
@@ -354,7 +522,7 @@ namespace CurrencyConverter
         {
             get
             {
-                return _ValuteModelsList;
+                return currencyConverterCore.ValuteModelsList;
             }
         }
 
@@ -362,7 +530,7 @@ namespace CurrencyConverter
         {
             get
             {
-                return _ConvertibleValuteInfo;
+                return currencyConverterCore.ConvertibleValuteInfo;
             }
         }
 
@@ -370,7 +538,7 @@ namespace CurrencyConverter
         {
             get
             {
-                return _CalculateValuteInfo;
+                return currencyConverterCore.CalculateValuteInfo;
             }
         }
 
@@ -378,20 +546,15 @@ namespace CurrencyConverter
         {
             get
             {
-                string key = JsonData.Valute.Keys.ToList()[SelectedIndex];
-                string leftKey, rightKey;
-                if (ConvertibleValuteInfo.Contains("RUB"))
-                {
-                    leftKey = "RUB";
-                    rightKey = key;
-                }
-                else
-                {
-                    leftKey = key;
-                    rightKey = "RUB";
-                }
-                return string.Format("1 {0} = {1} {2}\nОбновлено {3}", 
-                    leftKey, Math.Round(CurrentFactor, 4).ToString(), rightKey, LastUpdateTime.ToString());
+                return currencyConverterCore.CurrentCourseValutesInfo;
+            }
+        }
+
+        public string CurrentCourseValuteShort
+        {
+            get
+            {
+                return currencyConverterCore.CurrentCourseValutesInfoShort;
             }
         }
     }
