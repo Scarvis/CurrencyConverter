@@ -89,7 +89,6 @@ namespace CurrencyConverter
 
     class CurrencyConverterCore
     {
-        static readonly HttpClient client = new HttpClient();
         private const string Url = "https://www.cbr-xml-daily.ru/daily_json.js";
         private const string RubString = "Российский рубль RUB";
         private const string RubCharCode = "RUB";
@@ -97,6 +96,8 @@ namespace CurrencyConverter
         private JsonModel JsonData;
         private double CurrentFactor;
         private double CurrentReverseFactor;
+        private CalculateValuteAction calculateValuteAction;
+        private NetworkModule networkModule = new NetworkModule();
 
         public List<ValuteModel> _ValuteModelsList;
         public int _SelectedIndex = 0;
@@ -106,10 +107,7 @@ namespace CurrencyConverter
 
         public CurrencyConverterCore()
         {
-            client.BaseAddress = new Uri(Url);
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
+            networkModule.SetUrl(Url);
             InitData();
             Init();
         }
@@ -174,18 +172,8 @@ namespace CurrencyConverter
         {
             try
             {
-                StringBuilder textFromFile = new StringBuilder();
-                using (StreamReader stream = new StreamReader(new BufferedStream(File.OpenRead(JsonPath), 10 * 1024 * 1024)))
-                {
-                    string line;
-                    while ((line = stream.ReadLine()) != null)
-                    {
-                        if (line.Length > 0)
-                            textFromFile.Append(line);
-                    }
-                }
-
-                JsonData = JsonConvert.DeserializeObject<JsonModel>(textFromFile.ToString());
+                AppContext appContext = new AppContext(new JsonDataProvider());
+                JsonData = appContext.GetFromLocalFile(JsonPath);
             }
             catch (Exception e)
             {
@@ -194,30 +182,10 @@ namespace CurrencyConverter
             }
             return true;
         }
-
-        private async Task<string> GetJsonString()
-        {
-            string strData = string.Empty;
-            HttpResponseMessage response = await client.GetAsync(Url);
-            if (response.IsSuccessStatusCode)
-            {
-                try
-                {
-                    strData = await response.Content.ReadAsStringAsync();
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                }
-            }
-            return strData;
-        }
-
+     
         private void UpdateCurrency()
         {
-            var t = Task.Run(() => GetJsonString());
-            t.Wait();
-            JsonData = JsonConvert.DeserializeObject<JsonModel>(t.Result);
+            JsonData = JsonConvert.DeserializeObject<JsonModel>(networkModule.GetJson());
         }
 
         private void SetFactor(double factor, double reverseFactor)
@@ -226,38 +194,12 @@ namespace CurrencyConverter
             CurrentReverseFactor = reverseFactor;
         }
 
-        private long LongMultiplication(double factor, long lValue, double dValue, out double remainder)
-        {
-            double dv = Math.Round(factor * dValue, 4);
-            long result = (long)(lValue * factor) + (long)Math.Truncate(dv);
-            remainder = Math.Round(dv - Math.Truncate(dv), 4);
-            return result;
-        }
-
-        private double FractMultiplication(double factor, long lValue, double dValue)
-        {
-            double result = Math.Round(factor * dValue + factor * lValue, 4);
-            return result;
-        }
-
-        private void FourStepMultiplication(double FactorDiv, double FactorInt, long calcInt, double calcDiv, out long lValue, out double dValue)
-        {
-            double remainder;
-            lValue = LongMultiplication(FactorInt, calcInt, calcDiv, out remainder);
-            dValue = FractMultiplication(FactorDiv, calcInt, calcDiv) + remainder;
-            lValue += (long)Math.Truncate(dValue);
-            dValue = Math.Round(dValue - Math.Truncate(dValue), 4);
-        }
-
         private ValuteSum Calculate(double Factor, ValuteSum calcSum)
         {
             ValuteSum valuteSum = new ValuteSum();
-            double FactorDiv = Math.Round(Factor - Math.Truncate(Factor), 4);
-            double FactorInt = Math.Truncate(Factor);
             long calcInt;
             double calcDiv;
-            FourStepMultiplication(FactorDiv, FactorInt, calcSum.IntSum, calcSum.divSumToDouble(), out calcInt, out calcDiv);
-
+            calculateValuteAction.Calculate(Factor, calcSum.IntSum, calcSum.divSumToDouble(), out calcInt, out calcDiv);
             valuteSum.IntSum = calcInt;
             valuteSum.DivSum = doubleToShort(calcDiv);
             return valuteSum;
