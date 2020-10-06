@@ -1,20 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using CurrencyConverter.interfaces;
+using CurrencyConverter.model;
+using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace CurrencyConverter
+namespace CurrencyConverter.service
 {
-    interface IDataProvider
-    {
-        public JsonModel GetFromLocalFile(string url);
-    }
-
     class JsonDataProvider : IDataProvider
     {
-        public JsonModel GetFromLocalFile(string url)
+        public DataModel GetFromLocalFile(string url, out Response response)
         {
+            response = new Response();
             try
             {
                 StringBuilder textFromFile = new StringBuilder();
@@ -34,23 +31,9 @@ namespace CurrencyConverter
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
+                response.Message = e.Message;
                 return null;
             }
-        }
-    }
-
-    class AppContext : IDataProvider
-    {
-        IDataProvider _dataProvider;
-
-        public AppContext(IDataProvider dataProvider)
-        {
-            _dataProvider = dataProvider;
-        }
-        
-        public JsonModel GetFromLocalFile(string url)
-        {
-            return _dataProvider.GetFromLocalFile(url);
         }
     }
 }

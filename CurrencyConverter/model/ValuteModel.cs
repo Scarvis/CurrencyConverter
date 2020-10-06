@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace CurrencyConverter
+namespace CurrencyConverter.model
 {
-    class JsonModel
-    {
-        public DateTimeOffset Date { get; set; }
-        public DateTimeOffset PreviousDate { get; set; }
-        public string PreviousURL { get; set; }
-        public DateTimeOffset Timestamp { get; set; }
-        public Dictionary<string, ValuteModel> Valute { get; set; }
-    }
-
     class ValuteModel
     {
         public string ID { get; set; }

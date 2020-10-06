@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text.RegularExpressions;
-using Windows.Foundation;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
@@ -13,6 +12,7 @@ namespace CurrencyConverter
         string ConvertedSumString;
         string CalculateSumString;
         int lastChangeTextBox = 3;
+
         public MainPage()
         {
             DataContext = currencyConverterViewModel;

@@ -1,15 +1,11 @@
-﻿using System;
+﻿using CurrencyConverter.model;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
 
-namespace CurrencyConverter
+namespace CurrencyConverter.service
 {
     struct ValuteSum
     {
@@ -78,7 +74,7 @@ namespace CurrencyConverter
                 IntSum = Convert.ToInt64(l);
                 DivSum = Convert.ToInt16(r);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 IntSum = 0;
                 DivSum = 0;
@@ -149,7 +145,7 @@ namespace CurrencyConverter
                 CurrentConvertibleSum.ValuteInfo = JsonData.Valute[key].ToString();
                 CurrentConvertibleSum.ValuteCharCode = JsonData.Valute[key].CharCode;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine(e.Message);
             }
@@ -172,8 +168,13 @@ namespace CurrencyConverter
         {
             try
             {
-                AppContext appContext = new AppContext(new JsonDataProvider());
-                JsonData = appContext.GetFromLocalFile(JsonPath);
+                DataProvider appContext = new DataProvider(new JsonDataProvider());
+                Response response = new Response();
+                JsonData = (JsonModel)appContext.GetFromLocalFile(JsonPath, out response);
+                if (JsonData == null)
+                {
+                    throw new Exception(response.Message);
+                }
             }
             catch (Exception e)
             {
@@ -182,7 +183,7 @@ namespace CurrencyConverter
             }
             return true;
         }
-     
+
         private void UpdateCurrency()
         {
             JsonData = JsonConvert.DeserializeObject<JsonModel>(networkModule.GetJson());
@@ -241,7 +242,7 @@ namespace CurrencyConverter
                 }
                 _SelectedIndex = index;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine(e.Message);
             }
@@ -357,146 +358,6 @@ namespace CurrencyConverter
                 string key = CurrentConvertibleSum.ValuteCharCode;
                 return string.Format("{0} {1}\n{2}",
                     Math.Round(CurrentFactor, 4).ToString(), key, LastUpdateTime.Date.ToString("d"));
-            }
-        }
-    }
-
-    class CurrencyConverterViewModel : INotifyPropertyChanged
-    {
-        private CurrencyConverterCore currencyConverterCore;
-
-        public int _SelectedIndex = 0;
-        public DateTimeOffset LastUpdateTime { private set; get; }
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public CurrencyConverterViewModel()
-        {
-            currencyConverterCore = new CurrencyConverterCore();
-            LastUpdateTime = currencyConverterCore.LastUpdateTime;
-            _SelectedIndex = currencyConverterCore._SelectedIndex;
-        }
-
-        private void notifyAll()
-        {
-            NotifyPropertyChanged("SelectedIndex");
-            NotifyPropertyChanged("CurrentConvertibleSumString");
-            NotifyPropertyChanged("CurrentCalculateSumString");
-            NotifyPropertyChanged("ValuteModelsList");
-            NotifyPropertyChanged("ConvertibleValuteInfo");
-            NotifyPropertyChanged("CalculateValuteInfo");
-            NotifyPropertyChanged("CurrentCourseValute");
-            NotifyPropertyChanged("CurrentCourseValuteShort");
-        }
-
-        private void NotifyPropertyChanged(string propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public void ReverseValute()
-        {
-            currencyConverterCore.ReverseValute();
-            notifyAll();
-        }
-
-        public void UpdateCourses()
-        {
-            currencyConverterCore.UpdateCourses();
-            notifyAll();
-        }
-
-        public string CurrentConvertibleSumString
-        {
-            get
-            {
-                return currencyConverterCore.ConvertibleValuteSumString;
-            }
-            set
-            {
-                if (value != currencyConverterCore.ConvertibleValuteSumString)
-                {
-                    currencyConverterCore.ConvertibleValuteSumString = value;
-                    NotifyPropertyChanged("CurrentConvertibleSumString");
-                    NotifyPropertyChanged("CurrentCalculateSumString");
-                }
-            }
-        }
-
-        public string CurrentCalculateSumString
-        {
-            get
-            {
-                return currencyConverterCore.CalculateValuteSumString;
-            }
-            set
-            {
-                if (value != currencyConverterCore.CalculateValuteSumString)
-                {
-                    currencyConverterCore.CalculateValuteSumString = value;
-                    NotifyPropertyChanged("CurrentConvertibleSumString");
-                    NotifyPropertyChanged("CurrentCalculateSumString");
-                }
-            }
-        }
-
-        public int SelectedIndex
-        {
-            get
-            {
-                return _SelectedIndex;
-            }
-            set
-            {
-                if(value != _SelectedIndex)
-                {
-                    _SelectedIndex = value;
-                    currencyConverterCore.SetIndexCalculateValute(_SelectedIndex);
-                    NotifyPropertyChanged("SelectedIndex");
-                    NotifyPropertyChanged("CurrentConvertibleSumString");
-                    NotifyPropertyChanged("CurrentCalculateSumString");
-                    NotifyPropertyChanged("CurrentCourseValute");
-                    NotifyPropertyChanged("CurrentCourseValuteShort");
-                }
-            }
-        }
-
-        public List<ValuteModel> ValuteModelsList
-        {
-            get
-            {
-                return currencyConverterCore.ValuteModelsList;
-            }
-        }
-
-        public string ConvertibleValuteInfo
-        {
-            get
-            {
-                return currencyConverterCore.ConvertibleValuteInfo;
-            }
-        }
-
-        public string CalculateValuteInfo
-        {
-            get
-            {
-                return currencyConverterCore.CalculateValuteInfo;
-            }
-        }
-
-        public string CurrentCourseValute
-        {
-            get
-            {
-                return currencyConverterCore.CurrentCourseValutesInfo;
-            }
-        }
-
-        public string CurrentCourseValuteShort
-        {
-            get
-            {
-                return currencyConverterCore.CurrentCourseValutesInfoShort;
             }
         }
     }

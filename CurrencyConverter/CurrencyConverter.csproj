@@ -127,16 +127,23 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="AppContext.cs" />
-    <Compile Include="CalculateValute.cs" />
-    <Compile Include="CalculateValuteAction.cs" />
-    <Compile Include="CurrencyConverterViewModel.cs" />
-    <Compile Include="JsonModel.cs" />
-    <Compile Include="MainPage.xaml.cs">
+    <Compile Include="config\ApplicationConstants.cs" />
+    <Compile Include="service\CalculateValuteAction.cs" />
+    <Compile Include="viewModels\CurrencyConverterViewModel.cs" />
+    <Compile Include="interfaces\IDataProvider.cs" />
+    <Compile Include="model\CalculateValuteModel.cs" />
+    <Compile Include="model\DataModel.cs" />
+    <Compile Include="model\JsonModel.cs" />
+    <Compile Include="views\MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
-    <Compile Include="NetworkModule.cs" />
+    <Compile Include="model\Response.cs" />
+    <Compile Include="model\ValuteModel.cs" />
+    <Compile Include="service\NetworkModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="service\CurrencyConverterCore.cs" />
+    <Compile Include="service\DataProvider.cs" />
+    <Compile Include="service\JsonDataProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
@@ -162,7 +169,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="MainPage.xaml">
+    <Page Include="views\MainPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -174,6 +181,9 @@
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>6.2.9</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="resources\constants.json" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

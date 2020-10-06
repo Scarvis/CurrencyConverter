@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CurrencyConverter.model;
+using System;
 
 namespace CurrencyConverter
 {
@@ -25,7 +22,7 @@ namespace CurrencyConverter
         }
         public CalculateValuteModel(CalculateValuteModel valuteSum)
         {
-            Copy(valuteSum); 
+            Copy(valuteSum);
         }
 
         private void Copy(CalculateValuteModel value)
@@ -44,6 +41,7 @@ namespace CurrencyConverter
         {
             Copy(val);
         }
+
         public void SetValueFromStr(string val)
         {
             val.Replace(",", ".");
