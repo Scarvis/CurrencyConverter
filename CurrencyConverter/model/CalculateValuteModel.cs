@@ -6,16 +6,15 @@ namespace CurrencyConverter
     class CalculateValuteModel : ValuteModel
     {
         public long IntSum { get; set; }
-        public double DivSum { get; set; }
-        public string Sum
+        public short DivSum { get; set; }
+
+        public CalculateValuteModel()
         {
-            get
-            {
-                return string.Format("{0}.{1}", IntSum.ToString(), DivSum.ToString());
-            }
+            IntSum = 0;
+            DivSum = 0;
         }
 
-        public CalculateValuteModel(long intSum, double divSum)
+        public CalculateValuteModel(long intSum, short divSum)
         {
             IntSum = intSum;
             DivSum = divSum;
@@ -37,7 +36,7 @@ namespace CurrencyConverter
             Value = value.Value;
         }
 
-        public void setValue(CalculateValuteModel val)
+        public void SetValue(CalculateValuteModel val)
         {
             Copy(val);
         }
@@ -64,7 +63,7 @@ namespace CurrencyConverter
                 string l = val.Substring(0, dotIndex);
                 string r = val.Substring(dotIndex + 1);
                 IntSum = Convert.ToInt64(l);
-                DivSum = Convert.ToDouble(r);
+                DivSum = Convert.ToInt16(r);
             }
             catch (Exception e)
             {
@@ -73,5 +72,25 @@ namespace CurrencyConverter
                 Console.WriteLine(e.Message);
             }
         }
+
+        public override string ToString()
+        {
+            return string.Format("{0}.{1}", IntSum.ToString(), DivSum.ToString());
+        }
+
+        public override bool Equals(object obj)
+        {
+            CalculateValuteModel calculateValuteModel = (CalculateValuteModel) obj;
+            return
+                calculateValuteModel.DivSum == DivSum &&
+                calculateValuteModel.IntSum == IntSum;
+        }
+
+        public override int GetHashCode()
+        {
+            return DivSum.GetHashCode() + IntSum.GetHashCode();
+        }
+
+        
     }
 }

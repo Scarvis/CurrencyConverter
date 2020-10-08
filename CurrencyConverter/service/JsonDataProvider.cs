@@ -25,7 +25,7 @@ namespace CurrencyConverter.service
                     }
                 }
 
-                JsonModel JsonData = JsonConvert.DeserializeObject<JsonModel>(textFromFile.ToString());
+                DataModel JsonData = JsonConvert.DeserializeObject<DataModel>(textFromFile.ToString());
                 return JsonData;
             }
             catch (Exception e)

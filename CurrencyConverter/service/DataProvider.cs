@@ -5,16 +5,21 @@ namespace CurrencyConverter.service
 {
     class DataProvider : IDataProvider
     {
-        IDataProvider _dataProvider;
+        IDataProvider _DataProvider;
+        
+        public DataProvider()
+        {
+            _DataProvider = new JsonDataProvider();
+        }
 
         public DataProvider(IDataProvider dataProvider)
         {
-            _dataProvider = dataProvider;
+            _DataProvider = dataProvider;
         }
 
         public DataModel GetFromLocalFile(string url, out Response response)
         {
-            return _dataProvider.GetFromLocalFile(url, out response);
+            return _DataProvider.GetFromLocalFile(url, out response);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using CurrencyConverter.model;
+﻿using CurrencyConverter.config;
+using CurrencyConverter.model;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -7,103 +8,31 @@ using System.Linq;
 
 namespace CurrencyConverter.service
 {
-    struct ValuteSum
-    {
-        public long IntSum { get; set; }
-        public short DivSum { get; set; }
-        public string ValuteCharCode { get; set; }
-        public string ValuteInfo { get; set; }
-        public string SumStr
-        {
-            get
-            {
-                return string.Format("{0}.{1}", IntSum.ToString(), DivSum.ToString());
-            }
-        }
-        public ValuteSum(long intSum, short divSum)
-        {
-            IntSum = intSum;
-            DivSum = divSum;
-            ValuteCharCode = string.Empty;
-            ValuteInfo = string.Empty;
-        }
-        public ValuteSum(ValuteSum valuteSum)
-        {
-            IntSum = valuteSum.IntSum;
-            DivSum = valuteSum.DivSum;
-            ValuteCharCode = valuteSum.ValuteCharCode;
-            ValuteInfo = valuteSum.ValuteInfo;
-        }
-        public double divSumToDouble()
-        {
-            short buf = DivSum;
-            double it = 1.0;
-            while (buf > 0)
-            {
-                buf /= 10;
-                it *= 10;
-            }
-            return (DivSum / it);
-        }
-        public void setValue(ValuteSum val)
-        {
-            IntSum = val.IntSum;
-            DivSum = val.DivSum;
-        }
-        public void SetValueFromStr(string val)
-        {
-            val.Replace(",", ".");
-            if (!val.Contains(".") || val.IndexOf(".") == val.Length - 1)
-            {
-                if (val.Length == 0)
-                {
-                    IntSum = 0;
-                }
-                else
-                {
-                    IntSum = Convert.ToInt64(val.Trim('.'));
-                }
-                DivSum = 0;
-                return;
-            }
-            try
-            {
-                int dotIndex = val.IndexOf(".");
-                string l = val.Substring(0, dotIndex);
-                string r = val.Substring(dotIndex + 1);
-                IntSum = Convert.ToInt64(l);
-                DivSum = Convert.ToInt16(r);
-            }
-            catch (Exception e)
-            {
-                IntSum = 0;
-                DivSum = 0;
-                Console.WriteLine(e.Message);
-            }
-        }
-    }
-
     class CurrencyConverterCore
     {
         private const string Url = "https://www.cbr-xml-daily.ru/daily_json.js";
         private const string RubString = "Российский рубль RUB";
         private const string RubCharCode = "RUB";
         private readonly string JsonPath = string.Format("{0}\\{1}", Directory.GetCurrentDirectory(), "daily_json.json");
-        private JsonModel JsonData;
+        private DataModel JsonData;
         private double CurrentFactor;
         private double CurrentReverseFactor;
-        private CalculateValuteAction calculateValuteAction;
-        private NetworkModule networkModule = new NetworkModule();
+        private NetworkModule _NetworkModule;
+        private readonly CalculateValuteAction _CalculateValuteAction;
+        private readonly ConfigurationModule Configuration;
 
         public List<ValuteModel> _ValuteModelsList;
         public int _SelectedIndex = 0;
-        public ValuteSum CurrentConvertibleSum;
-        public ValuteSum CurrentCalculateSum;
+        public CalculateValuteModel ConvertibleValute { private set; get; } = new CalculateValuteModel();
+        public CalculateValuteModel ConvertedValute { private set; get; } = new CalculateValuteModel();
         public DateTimeOffset LastUpdateTime { private set; get; }
 
         public CurrencyConverterCore()
         {
-            networkModule.SetUrl(Url);
+            _NetworkModule = new NetworkModule();
+            Configuration = new ConfigurationModule();
+
+            _NetworkModule.SetUrl(Url);
             InitData();
             Init();
         }
@@ -123,10 +52,10 @@ namespace CurrencyConverter.service
                 _SelectedIndex = JsonData.Valute.Keys.ToList().IndexOf("USD");
                 _ValuteModelsList = JsonData.Valute.Values.ToList();
                 LastUpdateTime = JsonData.Date;
-                CurrentConvertibleSum.ValuteInfo = RubString;
-                CurrentConvertibleSum.ValuteCharCode = RubCharCode;
-                CurrentCalculateSum.ValuteInfo = JsonData.Valute["USD"].ToString();
-                CurrentCalculateSum.ValuteCharCode = "USD";
+                ConvertibleValute.Name = RubString;
+                ConvertibleValute.CharCode = RubCharCode;
+                ConvertedValute.Name = JsonData.Valute["USD"].ToString();
+                ConvertedValute.CharCode = "USD";
             }
             catch (Exception e)
             {
@@ -142,8 +71,8 @@ namespace CurrencyConverter.service
         {
             try
             {
-                CurrentConvertibleSum.ValuteInfo = JsonData.Valute[key].ToString();
-                CurrentConvertibleSum.ValuteCharCode = JsonData.Valute[key].CharCode;
+                ConvertibleValute.Name = JsonData.Valute[key].ToString();
+                ConvertibleValute.CharCode = JsonData.Valute[key].CharCode;
             }
             catch (Exception e)
             {
@@ -155,8 +84,8 @@ namespace CurrencyConverter.service
         {
             try
             {
-                CurrentCalculateSum.ValuteInfo = JsonData.Valute[key].ToString();
-                CurrentCalculateSum.ValuteCharCode = JsonData.Valute[key].CharCode;
+                ConvertedValute.Name = JsonData.Valute[key].ToString();
+                ConvertedValute.CharCode = JsonData.Valute[key].CharCode;
             }
             catch (Exception e)
             {
@@ -186,7 +115,7 @@ namespace CurrencyConverter.service
 
         private void UpdateCurrency()
         {
-            JsonData = JsonConvert.DeserializeObject<JsonModel>(networkModule.GetJson());
+            JsonData = JsonConvert.DeserializeObject<JsonModel>(_NetworkModule.GetJson());
         }
 
         private void SetFactor(double factor, double reverseFactor)
@@ -195,15 +124,10 @@ namespace CurrencyConverter.service
             CurrentReverseFactor = reverseFactor;
         }
 
-        private ValuteSum Calculate(double Factor, ValuteSum calcSum)
+        private CalculateValuteModel Calculate(double Factor, CalculateValuteModel calcSum)
         {
-            ValuteSum valuteSum = new ValuteSum();
-            long calcInt;
-            double calcDiv;
-            calculateValuteAction.Calculate(Factor, calcSum.IntSum, calcSum.divSumToDouble(), out calcInt, out calcDiv);
-            valuteSum.IntSum = calcInt;
-            valuteSum.DivSum = doubleToShort(calcDiv);
-            return valuteSum;
+            return _CalculateValuteAction.GetCalculateValute(calcSum, Factor);
+            //CalculateValuteAction.Calculate(Factor, calcSum.IntSum, calcSum.divSumToDouble(), out long calcInt, out short calcDiv);
         }
 
         private short doubleToShort(double d)
@@ -228,13 +152,13 @@ namespace CurrencyConverter.service
                 double value = JsonData.Valute[key].Value / JsonData.Valute[key].Nominal;
                 if (value.Equals(0.0)) value = 1.0;
 
-                if (CurrentCalculateSum.ValuteInfo.Equals(RubString))
+                if (ConvertedValute.Name.Equals(RubString))
                 {
                     ChangeConvertedValuteInfo(key);
                     SetFactor(value, 1 / value);
                     CalculateConvertibleValute();
                 }
-                else if (CurrentConvertibleSum.ValuteInfo.Equals(RubString))
+                else if (ConvertibleValute.Name.Equals(RubString))
                 {
                     ChangeCalculatedValuteInfo(key);
                     SetFactor(1 / value, value);
@@ -250,12 +174,12 @@ namespace CurrencyConverter.service
 
         public void CalculateConvertibleValute()
         {
-            CurrentCalculateSum.setValue(Calculate(CurrentFactor, CurrentConvertibleSum));
+            ConvertedValute.SetValue(Calculate(CurrentFactor, ConvertibleValute));
         }
 
         public void CalculateCalculateValute()
         {
-            CurrentConvertibleSum.setValue(Calculate(CurrentReverseFactor, CurrentCalculateSum));
+            ConvertibleValute.SetValue(Calculate(CurrentReverseFactor, ConvertedValute));
         }
 
         public void UpdateCourses()
@@ -271,9 +195,9 @@ namespace CurrencyConverter.service
 
         public void ReverseValute()
         {
-            ValuteSum bufValute = new ValuteSum(CurrentConvertibleSum);
-            CurrentConvertibleSum = CurrentCalculateSum;
-            CurrentCalculateSum = bufValute;
+            CalculateValuteModel bufValute = new CalculateValuteModel(ConvertibleValute);
+            ConvertibleValute = ConvertedValute;
+            ConvertedValute = bufValute;
 
             var bufFactor = CurrentFactor;
             CurrentFactor = CurrentReverseFactor;
@@ -284,11 +208,11 @@ namespace CurrencyConverter.service
         {
             get
             {
-                return CurrentConvertibleSum.SumStr;
+                return ConvertibleValute.ToString();
             }
             set
             {
-                CurrentConvertibleSum.SetValueFromStr(value);
+                ConvertibleValute.SetValueFromStr(value);
                 CalculateConvertibleValute();
             }
         }
@@ -297,11 +221,11 @@ namespace CurrencyConverter.service
         {
             get
             {
-                return CurrentCalculateSum.SumStr;
+                return ConvertedValute.ToString();
             }
             set
             {
-                CurrentCalculateSum.SetValueFromStr(value);
+                ConvertedValute.SetValueFromStr(value);
                 CalculateCalculateValute();
             }
         }
@@ -310,7 +234,7 @@ namespace CurrencyConverter.service
         {
             get
             {
-                return CurrentConvertibleSum.ValuteInfo;
+                return ConvertibleValute.Name;
             }
         }
 
@@ -318,7 +242,7 @@ namespace CurrencyConverter.service
         {
             get
             {
-                return CurrentCalculateSum.ValuteInfo;
+                return ConvertedValute.Name;
             }
         }
 
@@ -355,7 +279,7 @@ namespace CurrencyConverter.service
         {
             get
             {
-                string key = CurrentConvertibleSum.ValuteCharCode;
+                string key = ConvertibleValute.CharCode;
                 return string.Format("{0} {1}\n{2}",
                     Math.Round(CurrentFactor, 4).ToString(), key, LastUpdateTime.Date.ToString("d"));
             }
