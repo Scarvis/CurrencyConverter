@@ -13,5 +13,24 @@ namespace CurrencyConverter.model
         public string PreviousURL { get; set; }
         public DateTimeOffset Timestamp { get; set; }
         public Dictionary<string, ValuteModel> Valute { get; set; }
+
+        public DataModel()
+        {
+
+        }
+    
+        public DataModel(DataModel dataModel)
+        {
+            Set(dataModel);
+        }
+
+        private void Set(DataModel dataModel)
+        {
+            Date = dataModel.Date;
+            PreviousDate = dataModel.PreviousDate;
+            PreviousURL = dataModel.PreviousURL ?? throw new ArgumentNullException(nameof(PreviousURL));
+            Timestamp = dataModel.Timestamp;
+            Valute = dataModel.Valute ?? throw new ArgumentNullException(nameof(Valute));
+        }
     }
 }

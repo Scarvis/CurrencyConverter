@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CurrencyConverter.config;
+using System;
 using System.Text.RegularExpressions;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -9,6 +10,7 @@ namespace CurrencyConverter
     public sealed partial class MainPage : Page
     {
         CurrencyConverterViewModel currencyConverterViewModel = new CurrencyConverterViewModel();
+        ApplicationConstants Constants = new ApplicationConstants();
         string ConvertedSumString;
         string CalculateSumString;
         int lastChangeTextBox = 3;
@@ -23,6 +25,7 @@ namespace CurrencyConverter
         private void checkNowDate()
         {
             Console.WriteLine(DateTimeOffset.Now.Date);
+            Constants.Tr("Refresh courses");
             if (DateTimeOffset.Now.Day != currencyConverterViewModel.LastUpdateTime.Day)
             {
                 UpdateCourseHyperLinkButton.Content = "Обновить курсы";

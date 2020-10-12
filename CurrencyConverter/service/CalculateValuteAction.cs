@@ -84,5 +84,10 @@ namespace CurrencyConverter
         {
             return Calculate(calculateValute, factor);
         }
+
+        //public CalculateValuteModel GetCalculateValute(string key)
+        //{
+
+        //}
     }
 }

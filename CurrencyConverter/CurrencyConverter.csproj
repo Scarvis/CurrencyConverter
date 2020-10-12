@@ -129,6 +129,7 @@
     </Compile>
     <Compile Include="config\ApplicationConstants.cs" />
     <Compile Include="config\ConfigurationModule.cs" />
+    <Compile Include="interfaces\IApplicationConstants.cs" />
     <Compile Include="service\CalculateValuteAction.cs" />
     <Compile Include="viewModels\CurrencyConverterViewModel.cs" />
     <Compile Include="interfaces\IDataProvider.cs" />

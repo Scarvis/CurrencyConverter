@@ -14,14 +14,14 @@ namespace CurrencyConverter.service
         private const string RubString = "Российский рубль RUB";
         private const string RubCharCode = "RUB";
         private readonly string JsonPath = string.Format("{0}\\{1}", Directory.GetCurrentDirectory(), "daily_json.json");
-        private DataModel JsonData;
         private double CurrentFactor;
         private double CurrentReverseFactor;
         private NetworkModule _NetworkModule;
         private readonly CalculateValuteAction _CalculateValuteAction;
         private readonly ConfigurationModule Configuration;
 
-        public List<ValuteModel> _ValuteModelsList;
+        //public List<ValuteModel> _ValuteModelsList;
+        public List<ValuteModel> ValuteDataList;
         public int _SelectedIndex = 0;
         public CalculateValuteModel ConvertibleValute { private set; get; } = new CalculateValuteModel();
         public CalculateValuteModel ConvertedValute { private set; get; } = new CalculateValuteModel();
@@ -31,6 +31,7 @@ namespace CurrencyConverter.service
         {
             _NetworkModule = new NetworkModule();
             Configuration = new ConfigurationModule();
+            ValuteDataList = new List<ValuteModel>();
 
             _NetworkModule.SetUrl(Url);
             InitData();
@@ -43,67 +44,19 @@ namespace CurrencyConverter.service
                 UpdateCurrency();
         }
 
-        private void Init()
-        {
-            try
-            {
-                CurrentReverseFactor = JsonData.Valute["USD"].Value;
-                CurrentFactor = 1 / CurrentReverseFactor;
-                _SelectedIndex = JsonData.Valute.Keys.ToList().IndexOf("USD");
-                _ValuteModelsList = JsonData.Valute.Values.ToList();
-                LastUpdateTime = JsonData.Date;
-                ConvertibleValute.Name = RubString;
-                ConvertibleValute.CharCode = RubCharCode;
-                ConvertedValute.Name = JsonData.Valute["USD"].ToString();
-                ConvertedValute.CharCode = "USD";
-            }
-            catch (Exception e)
-            {
-                CurrentReverseFactor = 0;
-                CurrentFactor = 0;
-                _SelectedIndex = 0;
-                _ValuteModelsList = new List<ValuteModel>();
-                Console.WriteLine(e.Message);
-            }
-        }
-
-        private void ChangeConvertedValuteInfo(string key)
-        {
-            try
-            {
-                ConvertibleValute.Name = JsonData.Valute[key].ToString();
-                ConvertibleValute.CharCode = JsonData.Valute[key].CharCode;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-        }
-
-        private void ChangeCalculatedValuteInfo(string key)
-        {
-            try
-            {
-                ConvertedValute.Name = JsonData.Valute[key].ToString();
-                ConvertedValute.CharCode = JsonData.Valute[key].CharCode;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-        }
-
         private bool getJsonFromLocal()
         {
             try
             {
                 DataProvider appContext = new DataProvider(new JsonDataProvider());
                 Response response = new Response();
-                JsonData = (JsonModel)appContext.GetFromLocalFile(JsonPath, out response);
+                DataModel JsonData = appContext.GetFromLocalFile(JsonPath, out response);
                 if (JsonData == null)
                 {
                     throw new Exception(response.Message);
                 }
+                Configuration.SetData(JsonData);
+                ValuteDataList = JsonData.Valute.Values.ToList();
             }
             catch (Exception e)
             {
@@ -115,7 +68,56 @@ namespace CurrencyConverter.service
 
         private void UpdateCurrency()
         {
-            JsonData = JsonConvert.DeserializeObject<JsonModel>(_NetworkModule.GetJson());
+            DataModel JsonData = JsonConvert.DeserializeObject<JsonModel>(_NetworkModule.GetJson());
+            ValuteDataList = JsonData.Valute.Values.ToList();
+            Configuration.SetData(JsonData);
+        }
+
+        private void Init()
+        {
+            try
+            {
+                CurrentReverseFactor = Configuration.DefaultValuteToCalculate.Value;
+                CurrentFactor = 1 / CurrentReverseFactor;
+                _SelectedIndex = Configuration.ValuteModelList.Valute.Keys.ToList().IndexOf(Configuration.DefaultValuteToCalculate.CharCode);
+                LastUpdateTime = Configuration.ValuteModelList.Date;
+                ConvertibleValute.SetValue(Configuration.DefaultValuteConvertible);
+                ConvertedValute.SetValue(Configuration.DefaultValuteToCalculate);
+            }
+            catch (Exception e)
+            {
+                CurrentReverseFactor = 0;
+                CurrentFactor = 0;
+                _SelectedIndex = 0;
+                ValuteDataList = new List<ValuteModel>();
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        private void ChangeConvertedValuteInfo(string charCode)
+        {
+            try
+            {
+                ConvertibleValute.SetValue(ValuteDataList.Find(valute => valute.CharCode == charCode));
+                //ConvertibleValute.Name = JsonData.Valute[key].ToString();
+                //ConvertibleValute.CharCode = JsonData.Valute[key].CharCode;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        private void ChangeCalculatedValuteInfo(string charCode)
+        {
+            try
+            {
+                ConvertedValute.SetValue(ValuteDataList.Find(valute => valute.CharCode == charCode));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         private void SetFactor(double factor, double reverseFactor)
@@ -130,37 +132,23 @@ namespace CurrencyConverter.service
             //CalculateValuteAction.Calculate(Factor, calcSum.IntSum, calcSum.divSumToDouble(), out long calcInt, out short calcDiv);
         }
 
-        private short doubleToShort(double d)
-        {
-            string buf = Math.Round(d, 4).ToString();
-            if (!buf.Contains(',')) return 0;
-            short result = 0;
-            short k = 10000;
-            for (int i = buf.Length - 1, n = 1; i >= 0; i--, k /= 10, n *= 10)
-            {
-                if (buf[i].Equals(',')) break;
-                result += (short)(int.Parse(buf[i].ToString()) * n);
-            }
-            return (short)(result * k);
-        }
-
         public void SetIndexCalculateValute(int index)
         {
             try
             {
-                string key = JsonData.Valute.Keys.ToList()[index];
-                double value = JsonData.Valute[key].Value / JsonData.Valute[key].Nominal;
+                string charCode = ValuteDataList[index].CharCode;
+                double value = ValuteDataList[index].Value / ValuteDataList[index].Nominal;
                 if (value.Equals(0.0)) value = 1.0;
 
                 if (ConvertedValute.Name.Equals(RubString))
                 {
-                    ChangeConvertedValuteInfo(key);
+                    ChangeConvertedValuteInfo(charCode);
                     SetFactor(value, 1 / value);
                     CalculateConvertibleValute();
                 }
                 else if (ConvertibleValute.Name.Equals(RubString))
                 {
-                    ChangeCalculatedValuteInfo(key);
+                    ChangeCalculatedValuteInfo(charCode);
                     SetFactor(1 / value, value);
                     CalculateCalculateValute();
                 }
@@ -188,7 +176,7 @@ namespace CurrencyConverter.service
             if (curDate.Day != LastUpdateTime.Day)
             {
                 UpdateCurrency();
-                LastUpdateTime = JsonData.Date;
+                LastUpdateTime = Configuration.ValuteModelList.Date;
                 SetIndexCalculateValute(_SelectedIndex);
             }
         }
@@ -250,7 +238,7 @@ namespace CurrencyConverter.service
         {
             get
             {
-                return _ValuteModelsList;
+                return ValuteDataList;
             }
         }
 
@@ -258,16 +246,16 @@ namespace CurrencyConverter.service
         {
             get
             {
-                string key = JsonData.Valute.Keys.ToList()[_SelectedIndex];
+                string charCode = ValuteDataList[_SelectedIndex].CharCode;
                 string leftKey, rightKey;
-                if (ConvertibleValuteInfo.Contains("RUB"))
+                if (ConvertibleValute.Name.Contains(Configuration.DefaultValute.CharCode))
                 {
                     leftKey = "RUB";
-                    rightKey = key;
+                    rightKey = charCode;
                 }
                 else
                 {
-                    leftKey = key;
+                    leftKey = charCode;
                     rightKey = "RUB";
                 }
                 return string.Format("1 {0} = {1} {2}\nОбновлено {3}",
@@ -279,9 +267,9 @@ namespace CurrencyConverter.service
         {
             get
             {
-                string key = ConvertibleValute.CharCode;
+                string charCode = ConvertibleValute.CharCode;
                 return string.Format("{0} {1}\n{2}",
-                    Math.Round(CurrentFactor, 4).ToString(), key, LastUpdateTime.Date.ToString("d"));
+                    Math.Round(CurrentFactor, 4).ToString(), charCode, LastUpdateTime.Date.ToString("d"));
             }
         }
     }
